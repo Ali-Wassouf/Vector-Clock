@@ -1,7 +1,6 @@
 package com.varun;
 
 import com.varun.storage.DatabaseServer;
-import com.varun.storage.GetResponseConditionUtil;
 import com.varun.util.MessageQueue;
 
 import java.io.BufferedReader;
@@ -13,17 +12,15 @@ import java.util.concurrent.Executors;
 public class Runner {
     public static void main(String[] args) throws IllegalArgumentException, IOException {
         int processCount = performValidation();
-        MessageQueue messageQueue = new MessageQueue(processCount);
         ExecutorService executorService = Executors.newFixedThreadPool(processCount);
-        GetResponseConditionUtil getResponseConditionUtil = new GetResponseConditionUtil();
         for (int i = 1; i <= processCount; i++) {
-            executorService.submit(new DatabaseServer(i, processCount, messageQueue, getResponseConditionUtil));
+            executorService.submit(new DatabaseServer(i, processCount));
         }
-        processUserInput(messageQueue, processCount);
+        processUserInput(processCount);
     }
 
     @SuppressWarnings("InfiniteLoopStatement")
-    private static void processUserInput(MessageQueue messageQueue, int processCount) throws IOException {
+    private static void processUserInput(int processCount) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
         while (true) {
             String message = bufferedReader.readLine();
@@ -35,7 +32,7 @@ public class Runner {
                     continue;
                 }
                 String publishedMessage = message.substring(message.indexOf(' ') + 1);
-                messageQueue.publishMessage(processId, publishedMessage);
+                MessageQueue.getInstance(processCount).publishMessage(processId, publishedMessage);
             } catch (NumberFormatException e) {
                 System.out.println("processId(Integer) should be provided with each command");
             } catch (Exception e) {
@@ -45,7 +42,7 @@ public class Runner {
     }
 
     private static int performValidation() throws IllegalArgumentException {
-        String processCount = System.getProperty("processCount");
+        String processCount = System.getProperty("processCount","5");
         if (processCount == null) {
             throw new IllegalArgumentException("Runner should called with processCount");
         }

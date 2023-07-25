@@ -23,17 +23,11 @@ public class Database {
 
     private final int totalProcessCount;
 
-    private final MessageQueue messageQueue;
-
-    private final GetResponseConditionUtil getResponseConditionUtil;
-
-    public Database(int processId, int totalProcessCount, MessageQueue messageQueue, GetResponseConditionUtil getResponseConditionUtil) {
+    public Database(int processId, int totalProcessCount) {
         this.processId = processId;
         this.totalProcessCount = totalProcessCount;
         this.vectorClock = new VectorClock(totalProcessCount);
         this.db = new HashMap<>();
-        this.messageQueue = messageQueue;
-        this.getResponseConditionUtil = getResponseConditionUtil;
     }
 
     /**
@@ -61,7 +55,7 @@ public class Database {
     public void get(String key) {
         // Initialize condition
         ClockValue selfClockValue = this.db.getOrDefault(key, null);
-        this.getResponseConditionUtil.initializeCondition(key, selfClockValue, totalProcessCount);
+        GetResponseConditionUtil.initializeCondition(key, selfClockValue, totalProcessCount);
 
         // Send sync_get request to other nodes
         String message = buildSyncGetMessage(key);
@@ -69,14 +63,14 @@ public class Database {
 
         // Wait for condition to be fulfilled
         try {
-            this.getResponseConditionUtil.getResponseCondition(key).isConditionMet();
+            GetResponseConditionUtil.getResponseCondition(key).isConditionMet();
         } catch (InterruptedException e) {
             System.out.println("Thread interrupted: " + e.getMessage());
         }
 
         // Calculate the highest clocks
         List<ClockValue> highestClockValues = ClockValue.findHighestClocks(
-                this.getResponseConditionUtil.getResponseCondition(key).getClockValues());
+                GetResponseConditionUtil.getResponseCondition(key).getClockValues());
         if (highestClockValues.isEmpty()) {
             System.out.println("No value found for key: " + key);
         } else {
@@ -96,7 +90,7 @@ public class Database {
      */
     public void sync(String key) {
         ClockValue clockValue = this.db.getOrDefault(key, null);
-        this.getResponseConditionUtil.updateCondition(key, clockValue);
+        GetResponseConditionUtil.updateCondition(key, clockValue);
     }
 
     /**
@@ -125,7 +119,7 @@ public class Database {
     private void dispatch(String message) {
         for (int i = 1; i <= this.totalProcessCount; i++) {
             if (i != this.processId) {
-                this.messageQueue.publishMessage(i, message);
+                MessageQueue.getInstance().publishMessage(i, message);
             }
         }
     }

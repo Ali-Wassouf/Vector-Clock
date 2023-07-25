@@ -10,13 +10,8 @@ public class MessageQueueTest {
     private static final int PROCESS_COUNT = 5;
 
     private static final String FAKE_MESSAGE = "fake message";
+    private final MessageQueue messageQueue = MessageQueue.getInstance(PROCESS_COUNT);
 
-    private MessageQueue messageQueue;
-
-    @Before
-    public void before() {
-        messageQueue = new MessageQueue(PROCESS_COUNT);
-    }
 
     @Test
     public void messageQueue_success() throws Exception {

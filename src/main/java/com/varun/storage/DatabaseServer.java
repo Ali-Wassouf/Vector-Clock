@@ -8,14 +8,11 @@ public class DatabaseServer implements Runnable {
 
     private final int processId;
 
-    private final MessageQueue messageQueue;
-
     private final Database database;
 
-    public DatabaseServer(int processId, int totalProcessCount, MessageQueue messageQueue, GetResponseConditionUtil getResponseConditionUtil) {
+    public DatabaseServer(int processId, int totalProcessCount) {
         this.processId = processId;
-        this.messageQueue = messageQueue;
-        this.database = new Database(processId, totalProcessCount, messageQueue, getResponseConditionUtil);
+        this.database = new Database(processId, totalProcessCount);
     }
 
     /**
@@ -28,7 +25,7 @@ public class DatabaseServer implements Runnable {
         System.out.printf("Database server started for processId: %d\n", this.processId);
         while (true) {
             try {
-                String message = messageQueue.consumeMessage(this.processId);
+                String message = MessageQueue.getInstance().consumeMessage(this.processId);
                 System.out.printf("Received message: %s on process: %d \n", message, this.processId);
                 DatabaseRequest request = RequestFactory.parseRequest(message);
                 request.process(database);

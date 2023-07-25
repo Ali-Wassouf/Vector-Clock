@@ -7,11 +7,30 @@ import java.util.concurrent.LinkedBlockingDeque;
 /**
  * A queue implementation to publish & consume messages for all running processes
  */
+
 public class MessageQueue {
 
-    private final ConcurrentHashMap<Integer, BlockingQueue<String>> processQueue;
+    private static final int DEFAULT_PROCESS_COUNT = 4;
 
-    public MessageQueue(int processCount) {
+    private final ConcurrentHashMap<Integer, BlockingQueue<String>> processQueue;
+    private static MessageQueue INSTANCE;
+
+    public static synchronized MessageQueue getInstance(int processCount) {
+        if (INSTANCE == null) {
+            INSTANCE = new MessageQueue(processCount);
+        }
+        return INSTANCE;
+    }
+
+    public static synchronized MessageQueue getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new MessageQueue(DEFAULT_PROCESS_COUNT);
+        }
+        return INSTANCE;
+    }
+
+
+    private MessageQueue(int processCount) {
         this.processQueue = new ConcurrentHashMap<>();
         for (int i = 1; i <= processCount; i++) {
             this.processQueue.put(i, new LinkedBlockingDeque<>());
